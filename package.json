@@ -1,0 +1,10 @@
+{
+  "name": "heartbeat-bot",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "setup": "node --env-file=.env scripts/setup.mjs",
+    "check": "node --env-file=.env scripts/check-updates.mjs"
+  }
+}
