@@ -29,7 +29,7 @@ export async function POST(request) {
     if (!gameRoles.has(roleId) || !i.member) return reply('Unknown role.');
     const has = i.member.roles.includes(roleId);
     await discord(has ? 'DELETE' : 'PUT', `/guilds/${i.guild_id}/members/${i.member.user.id}/roles/${roleId}`);
-    return reply(has ? `Removed <@&${roleId}>.` : `Added <@&${roleId}> — its channels are now unlocked.`);
+    return reply(has ? `Removed <@&${roleId}>.` : `Added <@&${roleId}> — you'll be pinged for its updates.`);
   }
 
   return reply('Unknown interaction.');

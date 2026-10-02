@@ -5,7 +5,7 @@ import { discord } from '../lib/discord.js';
 import { GAMES } from '../lib/games.js';
 
 const GUILD = '471138099871744030';
-const P = { VIEW: 1n << 10n, SEND: 1n << 11n, EMBED: 1n << 14n, HISTORY: 1n << 16n, THREADS: 1n << 35n };
+const P = { VIEW: 1n << 10n, SEND: 1n << 11n, EMBED: 1n << 14n, HISTORY: 1n << 16n, THREADS: (1n << 35n) | (1n << 36n) | (1n << 38n), REACT: 1n << 6n };
 const TEXT = 0, CATEGORY = 4;
 
 const me = await discord('GET', '/users/@me');
@@ -25,7 +25,11 @@ async function ensureRole(name, color) {
 
 async function ensureChannel(name, type, parentId, overwrites, topic) {
   const found = channels.find((c) => c.name === name && c.type === type && (c.parent_id ?? null) === (parentId ?? null));
-  if (found) return found;
+  if (found) {
+    // Keep permissions in sync on re-runs
+    await discord('PATCH', `/channels/${found.id}`, { permission_overwrites: overwrites });
+    return found;
+  }
   const ch = await discord('POST', `/guilds/${GUILD}/channels`, {
     name, type, parent_id: parentId ?? undefined, permission_overwrites: overwrites, topic,
   });
@@ -35,14 +39,14 @@ async function ensureChannel(name, type, parentId, overwrites, topic) {
 }
 
 const readOnly = [
-  { id: everyone, type: 0, allow: String(P.VIEW | P.HISTORY), deny: String(P.SEND | P.THREADS) },
+  { id: everyone, type: 0, allow: String(P.VIEW | P.HISTORY), deny: String(P.SEND | P.THREADS | P.REACT) },
   botAllow,
 ];
 
 // START HERE
 const start = await ensureChannel('📌 START HERE', CATEGORY, null, readOnly);
 const welcome = await ensureChannel('welcome', TEXT, start.id, readOnly, 'Welcome to Heart Beat');
-const picker = await ensureChannel('choose-your-games', TEXT, start.id, readOnly, 'Pick your games to unlock their channels');
+const picker = await ensureChannel('choose-your-games', TEXT, start.id, readOnly, 'Pick your games to get update pings');
 
 // COMMUNITY
 const community = await ensureChannel('💬 COMMUNITY', CATEGORY, null, []);
@@ -55,16 +59,12 @@ await ensureChannel('bug-reports', TEXT, community.id, [], 'Server or bot bugs: 
 const config = { guildId: GUILD, games: {} };
 for (const g of GAMES) {
   const role = await ensureRole(g.name, g.color);
-  const hidden = [
-    { id: everyone, type: 0, allow: '0', deny: String(P.VIEW) },
-    { id: role.id, type: 0, allow: String(P.VIEW | P.SEND | P.HISTORY), deny: '0' },
-    botAllow,
-  ];
-  const updatesPerms = hidden.map((o) => (o.id === role.id ? { ...o, allow: String(P.VIEW | P.HISTORY), deny: String(P.SEND | P.THREADS) } : o));
-  const cat = await ensureChannel(`${g.emoji} ${g.name}`, CATEGORY, null, hidden);
-  const updates = await ensureChannel(`${g.slug}-updates`, TEXT, cat.id, updatesPerms,
+  // Everyone can read every game; the role is only for update pings.
+  const open = [botAllow];
+  const cat = await ensureChannel(`${g.emoji} ${g.name}`, CATEGORY, null, open);
+  const updates = await ensureChannel(`${g.slug}-updates`, TEXT, cat.id, readOnly,
     g.appid ? `Official ${g.name} patch notes & news (auto-posted from Steam)` : `Official ${g.name} news`);
-  const chat = await ensureChannel(`${g.slug}-chat`, TEXT, cat.id, hidden, `${g.name} talk, LFG, clips`);
+  const chat = await ensureChannel(`${g.slug}-chat`, TEXT, cat.id, open, `${g.name} talk, LFG, clips`);
   config.games[g.slug] = { roleId: role.id, updatesId: updates.id, chatId: chat.id };
 }
 writeFileSync(new URL('../config.json', import.meta.url), JSON.stringify(config, null, 2) + '\n');
@@ -82,7 +82,7 @@ for (let i = 0; i < GAMES.length; i += 5) {
 const pickerMsg = {
   embeds: [{
     title: '🎮 Choose your games',
-    description: 'Click a game to get its role and unlock its **updates** and **chat** channels. Click again to remove it.\n\nYou\'ll be pinged in the updates channel whenever that game gets a patch or news post.',
+    description: 'Click a game to get its role. You\'ll be pinged in its **updates** channel whenever it gets a patch or news post. Click again to remove it.',
     color: 0xe91e63,
   }],
   components: rows,
@@ -93,7 +93,7 @@ await upsertBotMessage(welcome.id, {
   embeds: [{
     title: '❤️ Welcome to Heart Beat',
     description: [
-      `1. Head to <#${picker.id}> and pick the games you play.`,
+      `1. Head to <#${picker.id}> and pick the games you want update pings for.`,
       `2. Each game gets its own category with **#updates** (auto-posted patch notes) and **#chat**.`,
       `3. Hang out in <#${general.id}>, share clips in the media channel, and drop ideas or bugs in the suggestion and bug-report channels.`,
     ].join('\n'),
