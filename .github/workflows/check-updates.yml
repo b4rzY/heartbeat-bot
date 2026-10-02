@@ -1,9 +1,11 @@
 name: Check game updates
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 concurrency: check-updates
+permissions:
+  contents: write
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -16,3 +18,12 @@ jobs:
       - run: node scripts/check-updates.mjs
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      - name: Save last-seen builds
+        if: always()
+        run: |
+          git diff --quiet -- state.json 2>/dev/null && git ls-files --error-unmatch state.json >/dev/null 2>&1 && exit 0
+          git config user.name "heartbeat-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git commit -m "Update build state"
+          git push
