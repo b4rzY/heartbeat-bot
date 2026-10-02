@@ -15,6 +15,8 @@ function toEmbed(game, item) {
   const text = raw
     .replace(/\[img[^\]]*\](?:[^\[]*\[\/img\])?/gi, '')
     .replace(/\[\*\]/g, '• ')
+    .replace(/\[\/\*\]/g, '')
+    .replace(/\[(?:\/p|br|\/h\d|\/list|hr)\]/gi, '\n')
     .replace(/\[\/?[a-z0-9]+(?:[= ][^\]]*)?\]/gi, '')
     .replace(/<[^>]+>/g, '')
     .replace(/\n{3,}/g, '\n\n')
