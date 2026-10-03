@@ -57,16 +57,25 @@ await ensureChannel('bug-reports', TEXT, community.id, [], 'Server or bot bugs: 
 
 // Games
 const config = { guildId: GUILD, games: {} };
+const gameCats = [];
 for (const g of GAMES) {
   const role = await ensureRole(g.name, g.color);
   // Everyone can read every game; the role is only for update pings.
   const open = [botAllow];
   const cat = await ensureChannel(`${g.emoji} ${g.name}`, CATEGORY, null, open);
+  gameCats.push(cat.id);
   const updates = await ensureChannel(`${g.slug}-updates`, TEXT, cat.id, readOnly,
     g.appid ? `Official ${g.name} patch notes & news (auto-posted from Steam)` : `Official ${g.name} news`);
   const chat = await ensureChannel(`${g.slug}-chat`, TEXT, cat.id, open, `${g.name} talk, LFG, clips`);
   config.games[g.slug] = { roleId: role.id, updatesId: updates.id, chatId: chat.id };
 }
+
+// Keep game categories in GAMES order, in the slots they already occupy
+const cats = channels.filter((c) => c.type === CATEGORY)
+  .sort((a, b) => a.position - b.position || (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
+const queue = [...gameCats];
+const order = cats.map((c) => (gameCats.includes(c.id) ? queue.shift() : c.id));
+await discord('PATCH', `/guilds/${GUILD}/channels`, order.map((id, position) => ({ id, position })));
 writeFileSync(new URL('../config.json', import.meta.url), JSON.stringify(config, null, 2) + '\n');
 
 // Role picker message (edit ours if it already exists)
