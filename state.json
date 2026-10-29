@@ -92,10 +92,11 @@
     "notes": [
       "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1839676055896016",
       "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1842846814455578",
-      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656396722"
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656396722",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302235601"
     ],
-    "buildid": "26296257",
-    "changedAt": 1793275084
+    "buildid": "26299531",
+    "changedAt": 1793284116
   },
   "the-finals": {
     "notes": [
@@ -132,7 +133,7 @@
       "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846651706682663",
       "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302232787"
     ],
-    "buildid": "26260311",
-    "changedAt": 1793210503
+    "buildid": "26286980",
+    "changedAt": 1793296879
   }
 }
